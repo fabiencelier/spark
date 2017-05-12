@@ -24,6 +24,7 @@ import org.apache.spark.unsafe.array.ByteArrayMethods;
 import org.apache.spark.unsafe.bitset.BitSetMethods;
 import org.apache.spark.unsafe.types.CalendarInterval;
 import org.apache.spark.unsafe.types.UTF8String;
+import scala.Console;
 
 /**
  * A helper class to write data into global row buffer using `UnsafeRow` format.
@@ -207,6 +208,7 @@ public class UnsafeRowWriter {
   }
 
   public void write(int ordinal, UTF8String input) {
+    System.out.println("UnsafeRowWriter.write ordinal:" + ordinal + " input:" + input.toString());
     final int numBytes = input.numBytes();
     final int roundedSize = ByteArrayMethods.roundNumberOfBytesToNearestWord(numBytes);
 

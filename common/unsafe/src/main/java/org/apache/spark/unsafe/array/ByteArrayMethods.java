@@ -19,6 +19,8 @@ package org.apache.spark.unsafe.array;
 
 import org.apache.spark.unsafe.Platform;
 
+import scala.Console;
+
 public class ByteArrayMethods {
 
   private ByteArrayMethods() {
@@ -48,6 +50,8 @@ public class ByteArrayMethods {
   public static boolean arrayEquals(
       Object leftBase, long leftOffset, Object rightBase, long rightOffset, final long length) {
     int i = 0;
+
+    System.out.println("ByteArrayMethod.arrayEquals leftBase:" + leftBase);
 
     // check if stars align and we can get both offsets to be aligned
     if ((leftOffset % 8) == (rightOffset % 8)) {

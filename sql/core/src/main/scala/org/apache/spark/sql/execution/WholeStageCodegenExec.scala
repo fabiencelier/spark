@@ -147,11 +147,20 @@ trait CodegenSupport extends SparkPlan {
 
     ctx.freshNamePrefix = parent.variablePrefix
     val evaluated = evaluateRequiredVariables(output, inputVars, parent.usedInputs)
-    s"""
+    val consumeCode = s"""
        |${ctx.registerComment(s"CONSUME: ${parent.simpleString}")}
        |$evaluated
        |${parent.doConsume(ctx, inputVars, rowVar)}
      """.stripMargin
+    println("\n--------------------------------------------------------------")
+    println("BEGIN CONSUME CODE BODY")
+    println("--------------------------------------------------------------")
+    println(consumeCode)
+    println("\n--------------------------------------------------------------")
+    println("END CONSUME CODE BODY")
+    println("--------------------------------------------------------------")
+    consumeCode
+
   }
 
   /**
@@ -236,17 +245,20 @@ case class InputAdapter(child: SparkPlan) extends UnaryExecNode with CodegenSupp
   }
 
   override def doProduce(ctx: CodegenContext): String = {
+    println("WholeStageCodegenExec.doProduce")
     val input = ctx.freshName("input")
     // Right now, InputAdapter is only used when there is one input RDD.
     ctx.addMutableState("scala.collection.Iterator", input, s"$input = inputs[0];")
     val row = ctx.freshName("row")
-    s"""
+    val producedCode = s"""
        | while ($input.hasNext()) {
        |   InternalRow $row = (InternalRow) $input.next();
        |   ${consume(ctx, null, row).trim}
        |   if (shouldStop()) return;
        | }
      """.stripMargin
+    //println(producedCode)
+    producedCode
   }
 
   override def generateTreeString(
@@ -351,9 +363,18 @@ case class WholeStageCodegenExec(child: SparkPlan) extends UnaryExecNode with Co
   }
 
   override def doExecute(): RDD[InternalRow] = {
+
+    println("WholeStageCodegenExec.doExecute")
     val (ctx, cleanedSource) = doCodeGen()
     // try to compile and fallback if it failed
     try {
+      println("\n--------------------------------------------------------------")
+      println("CLEANED SOURCE BEGIN")
+      println("--------------------------------------------------------------")
+      println(cleanedSource.body)
+      println("\n--------------------------------------------------------------")
+      println("CLEANED SOURCE END")
+      println("--------------------------------------------------------------")
       CodeGenerator.compile(cleanedSource)
     } catch {
       case e: Exception if !Utils.isTesting && sqlContext.conf.wholeStageFallback =>

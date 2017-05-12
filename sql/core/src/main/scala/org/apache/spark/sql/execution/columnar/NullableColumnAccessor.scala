@@ -40,6 +40,7 @@ private[columnar] trait NullableColumnAccessor extends ColumnAccessor {
   }
 
   abstract override def extractTo(row: InternalRow, ordinal: Int): Unit = {
+    println("NullableColumnAccessor.extractTo")
     if (pos == nextNullIndex) {
       seenNulls += 1
 

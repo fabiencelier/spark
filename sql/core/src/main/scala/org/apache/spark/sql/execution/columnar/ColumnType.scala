@@ -22,12 +22,15 @@ import java.nio.ByteBuffer
 
 import scala.annotation.tailrec
 import scala.reflect.runtime.universe.TypeTag
+import scala.Console._
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.Platform
 import org.apache.spark.unsafe.types.UTF8String
+
+
 
 
 /**
@@ -93,6 +96,7 @@ private[columnar] sealed abstract class ColumnType[JvmType] {
    * possible.
    */
   def extract(buffer: ByteBuffer, row: InternalRow, ordinal: Int): Unit = {
+    println("ColumnType.extract")
     setField(row, ordinal, extract(buffer))
   }
 
@@ -132,6 +136,7 @@ private[columnar] sealed abstract class ColumnType[JvmType] {
    * boxing/unboxing costs whenever possible.
    */
   def copyField(from: InternalRow, fromOrdinal: Int, to: InternalRow, toOrdinal: Int): Unit = {
+    println("ColumnType.copyField")
     setField(to, toOrdinal, getField(from, fromOrdinal))
   }
 
@@ -182,6 +187,7 @@ private[columnar] object INT extends NativeColumnType(IntegerType, 4) {
   }
 
   override def setField(row: InternalRow, ordinal: Int, value: Int): Unit = {
+    println("\tINTEGER.setField ordinal: " + ordinal.toString + " value: " + value.toString )
     row.setInt(ordinal, value)
   }
 
@@ -211,6 +217,8 @@ private[columnar] object LONG extends NativeColumnType(LongType, 8) {
   }
 
   override def setField(row: InternalRow, ordinal: Int, value: Long): Unit = {
+    //println("LONG.setField ordinal: " + ordinal.toString + " value: " + value.toString + " row:" + row.toString());
+    println("\tLONG.setField ordinal: " + ordinal.toString + " value: " + value.toString )
     row.setLong(ordinal, value)
   }
 
@@ -367,6 +375,7 @@ private[columnar] trait DirectCopyColumnType[JvmType] extends ColumnType[JvmType
 
   // copy the bytes from ByteBuffer to UnsafeRow
   override def extract(buffer: ByteBuffer, row: InternalRow, ordinal: Int): Unit = {
+    println("DirectCopyColumnType.extract ordinal:" + ordinal.toString)
     if (row.isInstanceOf[MutableUnsafeRow]) {
       val numBytes = buffer.getInt
       val cursor = buffer.position()
@@ -408,9 +417,11 @@ private[columnar] object STRING
   }
 
   override def setField(row: InternalRow, ordinal: Int, value: UTF8String): Unit = {
+    println("\tSTRING.setField ordinal: " + ordinal.toString + " value: " + value.toString)
     if (row.isInstanceOf[MutableUnsafeRow]) {
       row.asInstanceOf[MutableUnsafeRow].writer.write(ordinal, value)
     } else {
+      println("\trow: " + row.toString())
       row.update(ordinal, value.clone())
     }
   }
@@ -420,6 +431,7 @@ private[columnar] object STRING
   }
 
   override def copyField(from: InternalRow, fromOrdinal: Int, to: InternalRow, toOrdinal: Int) {
+    println("STRING.copyField ")
     setField(to, toOrdinal, getField(from, fromOrdinal))
   }
 
@@ -460,6 +472,7 @@ private[columnar] case class COMPACT_DECIMAL(precision: Int, scale: Int)
   }
 
   override def setField(row: InternalRow, ordinal: Int, value: Decimal): Unit = {
+    println("UTF8-STRING.setField ordinal: " + ordinal.toString + " value: " + value.toString)
     row.setDecimal(ordinal, value, precision)
   }
 
@@ -554,6 +567,7 @@ private[columnar] case class STRUCT(dataType: StructType)
   override def defaultSize: Int = 20
 
   override def setField(row: InternalRow, ordinal: Int, value: UnsafeRow): Unit = {
+    println("\tSTRUCT.setField ordinal: " + ordinal.toString + " value: " + value.toString)
     row.update(ordinal, value)
   }
 

@@ -20,11 +20,14 @@ package org.apache.spark.sql.execution.columnar.compression
 import java.nio.ByteBuffer
 
 import scala.collection.mutable
+import scala.Console.println
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.SpecificInternalRow
 import org.apache.spark.sql.execution.columnar._
 import org.apache.spark.sql.types._
+
+
 
 
 private[columnar] case object PassThrough extends CompressionScheme {
@@ -57,6 +60,7 @@ private[columnar] case object PassThrough extends CompressionScheme {
     extends compression.Decoder[T] {
 
     override def next(row: InternalRow, ordinal: Int): Unit = {
+      println("PassThrough.Decoder.next")
       columnType.extract(buffer, row, ordinal)
     }
 
@@ -95,6 +99,7 @@ private[columnar] case object RunLengthEncoding extends CompressionScheme {
 
     override def gatherCompressibilityStats(row: InternalRow, ordinal: Int): Unit = {
       val value = columnType.getField(row, ordinal)
+      println("RunLengthEncoding.Encoder.gatherCompressibilityStats value:" + value.toString)
       val actualSize = columnType.actualSize(row, ordinal)
       _uncompressedSize += actualSize
 
@@ -114,6 +119,7 @@ private[columnar] case object RunLengthEncoding extends CompressionScheme {
     }
 
     override def compress(from: ByteBuffer, to: ByteBuffer): ByteBuffer = {
+      println("RunLengthEncoding.Encoder.compress")
       to.putInt(RunLengthEncoding.typeId)
 
       if (from.hasRemaining) {
@@ -157,6 +163,7 @@ private[columnar] case object RunLengthEncoding extends CompressionScheme {
     private var currentValue: T#InternalType = _
 
     override def next(row: InternalRow, ordinal: Int): Unit = {
+      println("RunLengthEncoding.Decoder.Next")
       if (valueCount == run) {
         currentValue = columnType.extract(buffer)
         run = ByteBufferHelper.getInt(buffer)
@@ -274,7 +281,10 @@ private[columnar] case object DictionaryEncoding extends CompressionScheme {
     }
 
     override def next(row: InternalRow, ordinal: Int): Unit = {
-      columnType.setField(row, ordinal, dictionary(buffer.getShort()).asInstanceOf[T#InternalType])
+      val dictKey = buffer.getShort()
+      val dictValue = dictionary(dictKey).asInstanceOf[T#InternalType]
+      println("\tDictionnaryEncoding.Decoder.next key:" + dictKey.toString + " value:" + dictValue.toString)
+      columnType.setField(row, ordinal, dictValue)
     }
 
     override def hasNext: Boolean = buffer.hasRemaining
@@ -357,6 +367,7 @@ private[columnar] case object BooleanBitSet extends CompressionScheme {
     private var visited: Int = 0
 
     override def next(row: InternalRow, ordinal: Int): Unit = {
+      println("BooleanBitSet.Decoder.next")
       val bit = visited % BITS_PER_LONG
 
       visited += 1
@@ -446,6 +457,7 @@ private[columnar] case object IntDelta extends CompressionScheme {
     override def next(row: InternalRow, ordinal: Int): Unit = {
       val delta = buffer.get()
       prev = if (delta > Byte.MinValue) prev + delta else ByteBufferHelper.getInt(buffer)
+      println("\tIntDelta.Decoder.next delta:" + delta.toString + " prev:" + prev)
       row.setInt(ordinal, prev)
     }
   }
@@ -524,6 +536,7 @@ private[columnar] case object LongDelta extends CompressionScheme {
     override def hasNext: Boolean = buffer.hasRemaining
 
     override def next(row: InternalRow, ordinal: Int): Unit = {
+      println("LongDelta.Decoder.next")
       val delta = buffer.get()
       prev = if (delta > Byte.MinValue) prev + delta else ByteBufferHelper.getLong(buffer)
       row.setLong(ordinal, prev)

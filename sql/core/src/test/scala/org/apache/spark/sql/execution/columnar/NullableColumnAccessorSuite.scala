@@ -52,6 +52,8 @@ class NullableColumnAccessorSuite extends SparkFunSuite {
   def testNullableColumnAccessor[JvmType](
       columnType: ColumnType[JvmType]): Unit = {
 
+    println("NullableColumnAccessorSuite.testNullableColumnAccessor")
+
     val typeName = columnType.getClass.getSimpleName.stripSuffix("$")
     val nullRow = makeNullRow(1)
 

@@ -20,11 +20,14 @@ package org.apache.spark.sql.execution.columnar
 import java.nio.{ByteBuffer, ByteOrder}
 
 import scala.annotation.tailrec
+import scala.Console._
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{UnsafeArrayData, UnsafeMapData, UnsafeRow}
 import org.apache.spark.sql.execution.columnar.compression.CompressibleColumnAccessor
 import org.apache.spark.sql.types._
+
+
 
 /**
  * An `Iterator` like trait used to extract values from columnar byte buffer. When a value is
@@ -54,10 +57,12 @@ private[columnar] abstract class BasicColumnAccessor[JvmType](
   override def hasNext: Boolean = buffer.hasRemaining
 
   override def extractTo(row: InternalRow, ordinal: Int): Unit = {
+    println("ColumnAccessor.extractTo")
     extractSingle(row, ordinal)
   }
 
   def extractSingle(row: InternalRow, ordinal: Int): Unit = {
+    println("ColumnAccessor.extractSingle")
     columnType.extract(buffer, row, ordinal)
   }
 

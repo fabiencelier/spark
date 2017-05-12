@@ -225,7 +225,13 @@ object GenerateColumnAccessor extends CodeGenerator[Seq[DataType], ColumnarItera
           return unsafeRow;
         }
       }"""
-
+    println("\n--------------------------------------------------------------")
+    println("BEGIN ACCESSOR CODE BODY")
+    println("--------------------------------------------------------------")
+    println(codeBody)
+    println("\n--------------------------------------------------------------")
+    println("END ACCESSOR CODE BODY")
+    println("--------------------------------------------------------------")
     val code = CodeFormatter.stripOverlappingComments(
       new CodeAndComment(codeBody, ctx.getPlaceHolderToComments()))
     logDebug(s"Generated ColumnarIterator:\n${CodeFormatter.format(code)}")

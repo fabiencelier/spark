@@ -88,6 +88,10 @@ case class ProjectExec(projectList: Seq[NamedExpression], child: SparkPlan)
 case class FilterExec(condition: Expression, child: SparkPlan)
   extends UnaryExecNode with CodegenSupport with PredicateHelper {
 
+  println("FILTER EXEC")
+  println("\tcondition:" + condition.toString )
+  println("\tchild:" + child.toString)
+
   // Split out all the IsNotNulls from condition.
   private val (notNullPreds, otherPreds) = splitConjunctivePredicates(condition).partition {
     case IsNotNull(a) => isNullIntolerant(a) && a.references.subsetOf(child.outputSet)
@@ -130,7 +134,6 @@ case class FilterExec(condition: Expression, child: SparkPlan)
 
   override def doConsume(ctx: CodegenContext, input: Seq[ExprCode], row: ExprCode): String = {
     val numOutput = metricTerm(ctx, "numOutputRows")
-
     /**
      * Generates code for `c`, using `in` for input attributes and `attrs` for nullability.
      */
@@ -146,11 +149,13 @@ case class FilterExec(condition: Expression, child: SparkPlan)
         s""
       }
 
-      s"""
+      val generatedPredicate = s"""
          |$evaluated
          |${ev.code}
          |if (${nullCheck}!${ev.value}) continue;
        """.stripMargin
+      //println(generatedPredicate)
+      generatedPredicate
     }
 
     ctx.currentVars = input
@@ -202,15 +207,24 @@ case class FilterExec(condition: Expression, child: SparkPlan)
       ev
     }
 
-    s"""
+    val filterExecCode = s"""
        |$generated
        |$nullChecks
        |$numOutput.add(1);
        |${consume(ctx, resultVars)}
      """.stripMargin
+    println("\n--------------------------")
+    println("BEGIN FILTER EXEC CODE")
+    println("--------------------------")
+    println(filterExecCode)
+    println("\n--------------------------")
+    println("END FILTER EXEC CODE")
+    println("--------------------------")
+    filterExecCode
   }
 
   protected override def doExecute(): RDD[InternalRow] = {
+    println("\tdoExecute")
     val numOutputRows = longMetric("numOutputRows")
     child.execute().mapPartitionsWithIndexInternal { (index, iter) =>
       val predicate = newPredicate(condition, child.output)
@@ -330,6 +344,8 @@ case class SampleExec(
  */
 case class RangeExec(range: org.apache.spark.sql.catalyst.plans.logical.Range)
   extends LeafExecNode with CodegenSupport {
+
+  println("RangeExec")
 
   def start: Long = range.start
   def step: Long = range.step

@@ -135,6 +135,7 @@ public final class UTF8String implements Comparable<UTF8String>, Externalizable,
    * bytes in this string.
    */
   public void writeToMemory(Object target, long targetOffset) {
+    System.out.println("UTF8STRING.writeToMemory targetOffset: " + targetOffset + " value: " + target.toString());
     Platform.copyMemory(base, offset, target, targetOffset, numBytes);
   }
 

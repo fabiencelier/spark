@@ -34,6 +34,7 @@ private[columnar] trait CompressibleColumnAccessor[T <: AtomicType] extends Colu
   abstract override def hasNext: Boolean = super.hasNext || decoder.hasNext
 
   override def extractSingle(row: InternalRow, ordinal: Int): Unit = {
+    println("CompressibleColumnAccessor.extractSingle")
     decoder.next(row, ordinal)
   }
 }

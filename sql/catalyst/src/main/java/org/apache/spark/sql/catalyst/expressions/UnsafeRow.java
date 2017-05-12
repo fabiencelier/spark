@@ -208,6 +208,7 @@ public final class UnsafeRow extends InternalRow implements Externalizable, Kryo
 
   @Override
   public void setInt(int ordinal, int value) {
+    System.out.println("UnsafeRow.setInt int:" + value);
     assertIndexIsValid(ordinal);
     setNotNullAt(ordinal);
     Platform.putInt(baseObject, getFieldOffset(ordinal), value);
